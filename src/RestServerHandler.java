@@ -2,8 +2,12 @@ import org.json.simple.JSONArray;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 
 public class RestServerHandler  extends Thread {
 
@@ -23,6 +27,14 @@ public class RestServerHandler  extends Thread {
 
     private DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
+    private static final Map<String, String> CONTENT_TYPES = new HashMap<>() {{
+        put("jpg", "image/jpeg");
+        put("html", "text/html");
+        put("json", "application/json");
+        put("txt", "text/plain");
+        put("", "text/plain");
+    }};
+
     RestServerHandler(Socket socket, String directory) {
         this.socket = socket;
         this.directory = directory;
@@ -33,15 +45,40 @@ public class RestServerHandler  extends Thread {
             parseRequest(input);
             switch (method){
                 case "GET":{
-                    var extension = "json";
-                    var type = "application/json";
-                    var fileBytes =  getAllInfoFromDB().toString().getBytes("utf-8");
-                    this.sendHeader(output, 200, "OK", type, fileBytes.length);
+                    if(isRequestInDatabase(requestURL)){
+                        var extension = "json";
+                        var type = "application/json";
+                        var fileBytes =  getAllInfoFromDB().toString().getBytes("utf-8");
+                        this.sendHeader(output, 200, "OK", type, fileBytes.length);
 
-                    LogSystem.acces_log(Host, DTF.format(LocalDateTime.now()).toString(),method + " " +
-                            requestURL + "HTTP/1.1", 200,fileBytes.length, requestURL, UserAgent);
+                        LogSystem.acces_log(Host, DTF.format(LocalDateTime.now()).toString(),method + " " +
+                                requestURL + "HTTP/1.1", 200,fileBytes.length, requestURL, UserAgent);
 
-                    output.write(fileBytes);
+                        output.write(fileBytes);
+                    } else {
+                        var filePath = Path.of(this.directory, requestURL);
+                        if (Files.exists(filePath) && !Files.isDirectory(filePath)) {
+                            var extension = this.getFileExtension(filePath);
+                            var type = CONTENT_TYPES.get(extension);
+                            var fileBytes = Files.readAllBytes(filePath);
+                            this.sendHeader(output, 200, "OK", type, fileBytes.length);
+
+                            LogSystem.acces_log(Host, DTF.format(LocalDateTime.now()).toString(),method + " " +
+                                    requestURL + "HTTP/1.1", 200,fileBytes.length,requestURL,UserAgent);
+
+                            output.write(fileBytes);
+                        } else {
+                            var type = CONTENT_TYPES.get("text");
+                            this.sendHeader(output, 404, "Not Found", type, HTTP_MESSAGE.NOT_FOUND_404.length());
+
+                            LogSystem.acces_log(Host, DTF.format(LocalDateTime.now()).toString(),method + " " +
+                                            requestURL + "HTTP/1.1", 404,HTTP_MESSAGE.NOT_FOUND_404.length(),
+                                    requestURL, UserAgent);
+
+                            output.write(HTTP_MESSAGE.NOT_FOUND_404.getBytes());
+                        }
+
+                    }
 
                     break;
                 }
@@ -85,6 +122,16 @@ public class RestServerHandler  extends Thread {
         }
 
         requestPayload = payload.toString();
+    }
+
+    private Boolean isRequestInDatabase(String str){
+        return str.contains("?");
+    }
+
+    private String getFileExtension(Path path) {
+        var name = path.getFileName().toString();
+        var extensionStart = name.lastIndexOf(".");
+        return extensionStart == -1 ? "" : name.substring(extensionStart + 1);
     }
 
     private void sendHeader(OutputStream output, int statusCode, String statusText, String type, long lenght) {
