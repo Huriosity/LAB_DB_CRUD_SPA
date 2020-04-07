@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,7 +47,6 @@ public class RestServerHandler  extends Thread {
             switch (method){
                 case "GET":{
                     if(isRequestInDatabase(requestURL)){
-                        var extension = "json";
                         var type = "application/json";
                         var fileBytes =  getAllInfoFromDB().toString().getBytes("utf-8");
                         this.sendHeader(output, 200, "OK", type, fileBytes.length);
@@ -86,6 +86,21 @@ public class RestServerHandler  extends Thread {
                     break;
                 }
                 case "PUT":{
+                    ArrayList<ArrayList<String>> keyValuePair = parseRequestPayload();
+                    for(int i = 0; i < keyValuePair.get(0).size(); i++){
+                        System.out.println("fist = " + keyValuePair.get(0).get(i));
+                        System.out.println("second = " + keyValuePair.get(1).get(i));
+                    }
+
+                    var type = "application/json";
+                    var fileBytes =  updateRecordInTheDB(keyValuePair).toString().getBytes("utf-8");
+                    this.sendHeader(output, 200, "OK", type, fileBytes.length);
+
+                    LogSystem.acces_log(Host, DTF.format(LocalDateTime.now()).toString(),method + " " +
+                            requestURL + "HTTP/1.1", 200,fileBytes.length,requestURL,UserAgent);
+
+                    output.write(fileBytes);
+
                     break;
                 }
                 case "DELETE":{
@@ -124,6 +139,20 @@ public class RestServerHandler  extends Thread {
         requestPayload = payload.toString();
     }
 
+    private ArrayList<ArrayList<String>> parseRequestPayload(){
+        ArrayList<ArrayList<String>> HalvesOfParamenter = new ArrayList<ArrayList<String>>();
+        for(int i = 0;i < 2; i++) {
+            HalvesOfParamenter.add(new ArrayList<String>());
+        }
+        int i = 0;
+        for (String retval : requestPayload.split("&")) {
+            HalvesOfParamenter.get(0).add(retval.split("=",2)[0]);
+            HalvesOfParamenter.get(1).add(retval.split("=",2)[1]);
+            i++;
+        }
+        return HalvesOfParamenter;
+    }
+
     private Boolean isRequestInDatabase(String str){
         return str.contains("?");
     }
@@ -143,6 +172,11 @@ public class RestServerHandler  extends Thread {
     }
 
     public static JSONArray getAllInfoFromDB(){
+        return configurateJsonArray(Database.getAllInfoFromDatabase());
+    }
+
+    public static JSONArray updateRecordInTheDB(ArrayList<ArrayList<String>> keyValuePair){
+        Database.updateRecordInTheDatabase(keyValuePair);
         return configurateJsonArray(Database.getAllInfoFromDatabase());
     }
 
