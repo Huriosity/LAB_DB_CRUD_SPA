@@ -1,0 +1,5 @@
+.idea
+out
+*.properties
+LAB_DB_CRUD_SPA.iml
+*.log
