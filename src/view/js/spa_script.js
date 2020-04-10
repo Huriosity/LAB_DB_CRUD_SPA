@@ -53,7 +53,14 @@ function InitLinks()
 
 function LinkClick(href)
 {
-    SendRequest("?",href);
+    switch(href){
+        case 'edit.html':
+            SendRequest("",href);
+            break;
+        default:
+             SendRequest("?",href);
+             break;
+    }
 }
 
 function FormInputClick(value,id){
@@ -127,24 +134,31 @@ function SendRequest(query, link)
 {
     var xhr = new XMLHttpRequest(); //Создаём объект для отправки запроса
 
-    xhr.open("GET", "index.html" + query, true); //Открываем соединение
+    xhr.open("GET", link + query, true); //Открываем соединение
 
     xhr.onreadystatechange = function() //Указываем, что делать, когда будет получен ответ от сервера
     {
    	 if (xhr.readyState != 4) return; //Если это не тот ответ, который нам нужен, ничего не делаем
 
    	 //Иначе говорим, что сайт загрузился
-   	 loaded = true;
-
-   	 if (xhr.status == 200) //Если ошибок нет, то получаем данные
-   	 {
-   	  GetData((xhr.responseText), link);
-   	 }
-   	 else //Иначе выводим сообщение об ошибке
-   	 {
-   		 alert("Loading error! Try again later.");
-   		 console.log(xhr.status + ": " + xhr.statusText);
-   	 }
+        loaded = true;
+        if( link === window.location.pathname){
+   	        if (xhr.status == 200) //Если ошибок нет, то получаем данные
+   	        {
+   	            GetData((xhr.responseText), link);
+   	        }
+   	        else //Иначе выводим сообщение об ошибке
+   	        {
+   		        alert("Loading error! Try again later.");
+   		        console.log(xhr.status + ": " + xhr.statusText);
+            }
+        } else {
+            HTML = document.querySelector("html");
+            HTML.innerHTML = "";
+            HTML.innerHTML = xhr.responseText;
+           
+            window.history.pushState(xhr.responseText,null,link);
+        }
     }
 
     loaded = false; //Говорим, что идёт загрузка
@@ -153,6 +167,12 @@ function SendRequest(query, link)
     setTimeout(ShowLoading, 2000);
     xhr.send(); //Отправляем запрос
 }
+
+window.onpopstate = function(event) {
+    HTML = document.querySelector("html");
+    HTML.innerHTML = "";
+    HTML.innerHTML = (event.state);
+  }
 
 
 
@@ -246,8 +266,9 @@ function UpdatePage() //Обновление контента
          page.table.appendChild(tr);
 
     } 
+    pageState = document.querySelector("html").outerHTML;
 
-    window.history.pushState( data.table, data.link); //Меняем ссылку
+    window.history.pushState( pageState, null, data.link); //Меняем ссылку
 
     InitLinks(); //Инициализируем новые ссылки
 }
