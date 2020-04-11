@@ -31,6 +31,7 @@ public class RestServerHandler  extends Thread {
     private static final Map<String, String> CONTENT_TYPES = new HashMap<>() {{
         put("jpg", "image/jpeg");
         put("html", "text/html");
+        put("css", "text/css");
         put("json", "application/json");
         put("txt", "text/plain");
         put("", "text/plain");
@@ -83,6 +84,22 @@ public class RestServerHandler  extends Thread {
                     break;
                 }
                 case "POST":{
+                    ArrayList<ArrayList<String>> keyValuePair = parseRequestPayload();
+                    for(int i = 0; i < keyValuePair.get(0).size(); i++){
+                        System.out.println("fist = " + keyValuePair.get(0).get(i));
+                        System.out.println("second = " + keyValuePair.get(1).get(i));
+                    }
+                    var type = "text/plain";
+
+                    createNewRecordInTheDB(keyValuePair);
+
+                    this.sendHeader(output, 201, "CREATED", type, HTTP_MESSAGE.CREATED_201.length());
+
+                    LogSystem.acces_log(Host, DTF.format(LocalDateTime.now()).toString(),method + " " +
+                            requestURL + "HTTP/1.1", 201,HTTP_MESSAGE.CREATED_201.length(), requestURL, UserAgent);
+
+                    output.write(HTTP_MESSAGE.CREATED_201.getBytes());
+
                     break;
                 }
                 case "PUT":{
@@ -174,6 +191,10 @@ public class RestServerHandler  extends Thread {
 
     public static JSONArray getAllInfoFromDB(){
         return configurateJsonArray(Database.getAllInfoFromDatabase());
+    }
+
+    public static void createNewRecordInTheDB( ArrayList<ArrayList<String>> keyValuePair){
+        Database.createNewRecordInTheDatabase(keyValuePair);
     }
 
     public static JSONArray updateRecordInTheDB(ArrayList<ArrayList<String>> keyValuePair){
