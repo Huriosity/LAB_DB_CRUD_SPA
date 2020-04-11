@@ -110,8 +110,9 @@ public class RestServerHandler  extends Thread {
                     }
 
                     var type = "text/plain";
+
                     updateRecordInTheDB(keyValuePair);
-                    // var fileBytes =  updateRecordInTheDB(keyValuePair).toString().getBytes("utf-8")
+
                     this.sendHeader(output, 200, "OK", type, HTTP_MESSAGE.OK_200.length());
 
                     LogSystem.acces_log(Host, DTF.format(LocalDateTime.now()).toString(),method + " " +
@@ -122,6 +123,23 @@ public class RestServerHandler  extends Thread {
                     break;
                 }
                 case "DELETE":{
+                    ArrayList<ArrayList<String>> keyValuePair = parseRequestPayload();
+                    for(int i = 0; i < keyValuePair.get(0).size(); i++){
+                        System.out.println("fist = " + keyValuePair.get(0).get(i));
+                        System.out.println("second = " + keyValuePair.get(1).get(i));
+                    }
+
+                    var type = "text/plain";
+
+                    deleteRecordInTheDB(keyValuePair);
+
+                    this.sendHeader(output, 204, HTTP_MESSAGE.NO_CONTENT_204, type, HTTP_MESSAGE.NO_CONTENT_204.length());
+
+                    LogSystem.acces_log(Host, DTF.format(LocalDateTime.now()).toString(),method + " " +
+                            requestURL + "HTTP/1.1", 204,HTTP_MESSAGE.NO_CONTENT_204.length(),requestURL,UserAgent);
+
+                    output.write(HTTP_MESSAGE.NO_CONTENT_204.getBytes());
+
                     break;
                 }
 
@@ -199,6 +217,10 @@ public class RestServerHandler  extends Thread {
 
     public static void updateRecordInTheDB(ArrayList<ArrayList<String>> keyValuePair){
         Database.updateRecordInTheDatabase(keyValuePair);
+    }
+
+    public static void deleteRecordInTheDB(ArrayList<ArrayList<String>> keyValuePair){
+        Database.deleteRecordInTheDatabase(keyValuePair);
     }
 
     private static JSONArray configurateJsonArray(DatabaseResponse databaseResponse){
