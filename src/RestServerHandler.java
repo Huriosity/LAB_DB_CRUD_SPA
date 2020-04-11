@@ -197,9 +197,8 @@ public class RestServerHandler  extends Thread {
         Database.createNewRecordInTheDatabase(keyValuePair);
     }
 
-    public static JSONArray updateRecordInTheDB(ArrayList<ArrayList<String>> keyValuePair){
+    public static void updateRecordInTheDB(ArrayList<ArrayList<String>> keyValuePair){
         Database.updateRecordInTheDatabase(keyValuePair);
-        return configurateJsonArray(Database.getAllInfoFromDatabase());
     }
 
     private static JSONArray configurateJsonArray(DatabaseResponse databaseResponse){
