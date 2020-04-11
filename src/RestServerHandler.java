@@ -92,14 +92,15 @@ public class RestServerHandler  extends Thread {
                         System.out.println("second = " + keyValuePair.get(1).get(i));
                     }
 
-                    var type = "application/json";
-                    var fileBytes =  updateRecordInTheDB(keyValuePair).toString().getBytes("utf-8");
-                    this.sendHeader(output, 200, "OK", type, fileBytes.length);
+                    var type = "text/plain";
+                    updateRecordInTheDB(keyValuePair);
+                    // var fileBytes =  updateRecordInTheDB(keyValuePair).toString().getBytes("utf-8")
+                    this.sendHeader(output, 200, "OK", type, HTTP_MESSAGE.OK_200.length());
 
                     LogSystem.acces_log(Host, DTF.format(LocalDateTime.now()).toString(),method + " " +
-                            requestURL + "HTTP/1.1", 200,fileBytes.length,requestURL,UserAgent);
+                            requestURL + "HTTP/1.1", 200,HTTP_MESSAGE.OK_200.length(),requestURL,UserAgent);
 
-                    output.write(fileBytes);
+                    output.write(HTTP_MESSAGE.OK_200.getBytes());
 
                     break;
                 }

@@ -102,30 +102,23 @@ function parseDataFromForm(input_id){
 
 function sendPutRequest(id,link){
     var xhr = new XMLHttpRequest();
-
     xhr.open('PUT', 'index.html', true);
-
     xhr.onreadystatechange = function() //Указываем, что делать, когда будет получен ответ от сервера
     {
-   	 if (xhr.readyState != 4) return; //Если это не тот ответ, который нам нужен, ничего не делаем
-
-   	 //Иначе говорим, что сайт загрузился
-   	 loaded = true;
-
-   	 if (xhr.status == 200) //Если ошибок нет, то получаем данные
-   	 {
-   	  GetData((xhr.responseText), link);
-   	 }
-   	 else //Иначе выводим сообщение об ошибке
-   	 {
-   		 alert("Loading error! Try again later.");
-   		 console.log(xhr.status + ": " + xhr.statusText);
-   	 }
+        if (xhr.readyState != 4) return; //Если это не тот ответ, который нам нужен, ничего не делаем
+        loaded = true;
+        if (xhr.status == 200) //Если ошибок нет, то получаем данные
+   	    {
+               // GetData((xhr.responseText), link);
+               SendRequest("?",link);
+   	    } else //Иначе выводим сообщение об ошибке
+           {
+               alert("Loading error! Try again later.");
+               console.log(xhr.status + ": " + xhr.statusText);
+           }
     }
-
     loaded = false; //Говорим, что идёт загрузка
 
-    //Устанавливаем таймер, который покажет сообщение о загрузке, если она не завершится через 2 секунды
     setTimeout(ShowLoading, 2000);
     xhr.send(parseDataFromForm(id)); //Отправляем запрос
 }
