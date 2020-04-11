@@ -74,6 +74,9 @@ function FormInputClick(method,id){
          sendPutRequest(id ,"/index.html");
     } else if (method === "post") {
         sendPostRequest(id ,"/index.html");
+    } else if (method === "delete") {
+        alert("yse");
+        sendDeleteRequest(id,"index.html");
     }
 }
 
@@ -127,6 +130,31 @@ function parseDataFromEditForm(input_id){
         i += 1;
     }
     return dataWillReturn;
+}
+
+function sendDeleteRequest(id,link){
+    var xhr = new XMLHttpRequest();
+    xhr.open('DELETE', "index.html", true);
+    xhr.onreadystatechange = function() //Указываем, что делать, когда будет получен ответ от сервера
+    {
+        if (xhr.readyState != 4) return; //Если это не тот ответ, который нам нужен, ничего не делаем
+        loaded = true;
+        // alert("status = " + xhr.status);
+        if (xhr.status === 204) //Если ошибок нет, то получаем данные
+   	    {
+               // GetData((xhr.responseText), link);
+                document.getElementById("upd").click();
+   	    } else //Иначе выводим сообщение об ошибке
+           {
+               alert("Loading error! Try again later.");
+               console.log(xhr.status + ": " + xhr.statusText);
+           }
+    }
+    loaded = false; //Говорим, что идёт загрузка
+
+    setTimeout(ShowLoading, 2000);
+    xhr.send(parseDataFromForm(id)); //Отправляем запрос
+
 }
 
 function sendPostRequest(id,link) {
