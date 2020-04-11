@@ -29,6 +29,7 @@ function InitLinks()
 {
     links = document.getElementsByClassName("link_internal"); //Находим все ссылки на странице
     form_inputs = document.getElementsByClassName("form_internal_input");
+    form_inputs_edit = document.getElementsByClassName("form_internal_input_edit");
 
     for (var i = 0; i < links.length; i++)
     {
@@ -44,10 +45,12 @@ function InitLinks()
     	 form_inputs[i].addEventListener("click", function (e)
        	 {
        		 e.preventDefault();
-       		 FormInputClick(e.target.getAttribute("value"),e.target.getAttribute("id"));
+       		 FormInputClick(e.target.getAttribute("data-method"),e.target.getAttribute("id"));
        		 return true;
        	 });
-        }
+    }
+    page.table =  document.getElementById("table");
+    page.forms_div = document.getElementById("forms_div");
 }
 
 
@@ -63,12 +66,14 @@ function LinkClick(href)
     }
 }
 
-function FormInputClick(value,id){
+function FormInputClick(method,id){
 
-    if (value === "updateTable") {
+    if (method === "get") {
         SendRequest("?","/index.html");
-    } else if (value === "put"){
+    } else if (method === "put") {
          sendPutRequest(id ,"/index.html");
+    } else if (method === "post") {
+        sendPostRequest(id ,"/index.html");
     }
 }
 
@@ -98,6 +103,53 @@ function parseDataFromForm(input_id){
         i += 1;
     }
     return dataWillReturn;
+}
+
+function parseDataFromEditForm(input_id){
+    let form_input_element = document.getElementById(input_id);
+    let dataWillReturn = "";
+    let i = 0;
+    // переписать, он не те данные тянет
+    while(form_input_element.previousElementSibling !== null ){
+        let name = form_input_element.previousElementSibling.previousElementSibling.getAttribute("name");
+        let value = form_input_element.previousElementSibling.previousElementSibling.value;
+
+         console.log("name child" + i + " = " + name);
+         console.log("value child" + i + " = " + value);
+        
+        form_input_element = form_input_element.previousElementSibling.previousElementSibling;
+
+        dataWillReturn += name;
+        dataWillReturn += "=";
+        dataWillReturn += value;
+        dataWillReturn += "&";
+
+        i += 1;
+    }
+    return dataWillReturn;
+}
+
+function sendPostRequest(id,link) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', link, true);
+    xhr.onreadystatechange = function() //Указываем, что делать, когда будет получен ответ от сервера
+    {
+        if (xhr.readyState != 4) return; //Если это не тот ответ, который нам нужен, ничего не делаем
+        loaded = true;
+
+        if (xhr.status === 201) //Если ошибок нет, то получаем данные
+   	    {
+                SendRequest("",link);
+   	    } else //Иначе выводим сообщение об ошибке
+           {
+               alert("Loading error! Try again later.");
+               console.log(xhr.status + ": " + xhr.statusText);
+           }
+    }
+    loaded = false; //Говорим, что идёт загрузка
+
+    setTimeout(ShowLoading, 2000);
+    xhr.send(parseDataFromEditForm(id)); //Отправляем запрос
 }
 
 function sendPutRequest(id,link){
@@ -131,9 +183,9 @@ function SendRequest(query, link)
 
     xhr.onreadystatechange = function() //Указываем, что делать, когда будет получен ответ от сервера
     {
-   	 if (xhr.readyState != 4) return; //Если это не тот ответ, который нам нужен, ничего не делаем
+   	    if (xhr.readyState != 4) return; //Если это не тот ответ, который нам нужен, ничего не делаем
 
-   	 //Иначе говорим, что сайт загрузился
+   	    //Иначе говорим, что сайт загрузился
         loaded = true;
         if( link === window.location.pathname){
    	        if (xhr.status == 200) //Если ошибок нет, то получаем данные
@@ -151,6 +203,7 @@ function SendRequest(query, link)
             HTML.innerHTML = xhr.responseText;
            
             window.history.pushState(xhr.responseText,null,link);
+             InitLinks(); //Инициализируем новые ссылки
         }
     }
 
@@ -244,6 +297,7 @@ function UpdatePage() //Обновление контента
          inputUpdate.setAttribute("value","put");
          inputUpdate.setAttribute("class","form_internal_input")
          inputUpdate.setAttribute("id","put" + row);
+         inputUpdate.setAttribute("data-method","put");
 
          inputDelete.setAttribute("type","submit");
          inputDelete.setAttribute("form","updForm" + row);
@@ -251,6 +305,7 @@ function UpdatePage() //Обновление контента
          inputDelete.setAttribute("value","delete");
          inputDelete.setAttribute("class","form_internal_input")
          inputDelete.setAttribute("id","delete" + row);
+         inputDelete.setAttribute("data-method","delete");
 
          td_update.appendChild(inputUpdate);
          td_update.appendChild(inputDelete);
